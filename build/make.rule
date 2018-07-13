@@ -1,0 +1,135 @@
+.PHONY: all clean test
+
+MKDIR = mkdir
+RM = rm
+RMFLAGS = -fr
+
+CC = gcc
+AR = ar
+ARFLAGS = crs
+
+DIR_UNIT_FIXTURE_SRC=
+DIR_UNITY_SRC = 
+DIR_TEST = 
+DIR_TEST_INC =  
+
+
+DIR_TEST_SRC = 
+DIR_SRC = ./src
+DIR_OBJS = objs
+DIR_EXES = $(ROOT)/build/exes
+#DIR_DEPS = deps
+DIR_LIBS = $(ROOT)/build/libs
+DIRS =  $(DIR_OBJS)  $(DIR_LIBS) $(DIR_EXES)
+RMS = $(filter %.o %.dep,$(wildcard $(DIR_OBJS)/*.*)) 
+
+ifneq ($(EXE), "")
+EXE := $(addprefix $(DIR_EXES)/, $(EXE))
+#RMS += $(EXE)
+endif
+
+ifneq ($(LIB), "")
+LIB := $(addprefix $(DIR_LIBS)/, $(LIB))
+RMS += $(LIB)
+endif
+
+SRCS := $(wildcard ./src/*.c)
+
+
+ifeq ($(MAKECMDGOALS),test)
+DIR_UNITY_SRC = $(ROOT)/AdvMakeSWB/tools/Unity-master/src
+DIR_UNIT_FIXTURE_SRC = $(ROOT)/AdvMakeSWB/tools/Unity-master/extras/fixture/src
+DIR_TEST = ./test
+DIR_TEST_SRC = $(DIR_UNITY_SRC) $(DIR_UNIT_FIXTURE_SRC) $(DIR_TEST)
+SRCS += $(foreach n,$(DIR_TEST_SRC),$(wildcard $(n)/*.c))
+DIR_TEST_INC =  $(DIR_UNITY_SRC) $(DIR_UNIT_FIXTURE_SRC) $(DIR_TEST) 
+DIR_TEST_INC := $(strip $(DIR_TEST_INC))
+DIR_TEST_INC := $(addprefix -I, $(DIR_TEST_INC))
+
+EXE=test.exe
+EXE := $(addprefix $(DIR_EXES)/, $(EXE))
+RMS += $(EXE)
+endif
+
+
+OBJS = $(notdir $(SRCS:.c=.o))
+OBJS := $(addprefix $(DIR_OBJS)/, $(OBJS))
+DEPS = $(notdir $(SRCS:.c=.dep))
+DEPS := $(addprefix $(DIR_OBJS)/, $(DEPS))
+
+
+
+
+ifneq ($(EXE), "")
+all:  rm_exe $(EXE)
+endif
+
+ifeq ($(MAKECMDGOALS), test)
+test: $(EXE)	
+else
+all: $(LIB)	
+endif
+
+
+ifneq ($(MAKECMDGOALS), clean)
+include $(DEPS)
+endif
+
+ifneq ($(INC_DIRS), "")
+INC_DIRS := $(strip $(INC_DIRS))
+INC_DIRS := $(addprefix -I, $(INC_DIRS))
+endif
+
+ifneq ($(LINK_LIBS), "")
+LINK_LIBS := $(strip $(LINK_LIBS))
+LINK_LIBS := $(addprefix -l, $(LINK_LIBS))
+endif
+
+
+rm_exe:
+	$(RM) $(RMFLAGS) $(filter %.exe,$(wildcard $(DIR_EXES)/*.*))
+$(DIRS):
+	$(MKDIR) $@
+$(EXE): $(DIR_EXES) $(OBJS)
+	$(CC) -L$(DIR_LIBS) -o $@ $(filter %.o, $^) $(LINK_LIBS)
+$(LIB): $(DIR_LIBS) $(OBJS)
+	$(AR) $(ARFLAGS) $@ $(filter %.o, $^)
+$(DIR_OBJS)/%.o: $(DIR_OBJS)  $(DIR_SRC)/%.c
+	$(CC) $(INC_DIRS) $(DIR_TEST_INC) -o $@ -c $(filter %.c, $^)
+$(DIR_OBJS)/%.o:$(DIR_UNITY_SRC)/%.c
+	$(CC) $(INC_DIRS) $(DIR_TEST_INC) -c  $< -o $@ 
+$(DIR_OBJS)/%.o:$(DIR_UNIT_FIXTURE_SRC)/%.c
+	$(CC) $(INC_DIRS) $(DIR_TEST_INC) -c  $< -o $@ 
+$(DIR_OBJS)/%.o:$(DIR_TEST)/%.c
+	$(CC) $(INC_DIRS) $(DIR_TEST_INC) -c  $< -o $@ 
+$(DIR_OBJS)/%.dep: $(DIR_SRC)/%.c
+	@echo "Making $@ ..."
+	@set -e ; \
+	$(RM) $(RMFLAGS) $@.tmp ; \
+	$(CC) $(INC_DIRS) $(DIR_TEST_INC) -E -MM $(filter %.c, $^) > $@.tmp ; \
+	sed 's,\(.*\)\.o[ :]*,objs/\1.o $@: ,g' < $@.tmp > $@ ; \
+	$(RM) $(RMFLAGS) $@.tmp
+$(DIR_OBJS)/%.dep: $(DIR_UNITY_SRC)/%.c
+	@echo "Making $@ ..."
+	@set -e ; \
+	$(RM) $(RMFLAGS) $@.tmp ; \
+	$(CC) $(INC_DIRS) $(DIR_TEST_INC) -E -MM $(filter %.c, $^) > $@.tmp ; \
+	sed 's,\(.*\)\.o[ :]*,objs/\1.o $@: ,g' < $@.tmp > $@ ; \
+	$(RM) $(RMFLAGS) $@.tmp
+$(DIR_OBJS)/%.dep: $(DIR_UNIT_FIXTURE_SRC)/%.c
+	@echo "Making $@ ..."
+	@set -e ; \
+	$(RM) $(RMFLAGS) $@.tmp ; \
+	$(CC) $(INC_DIRS) $(DIR_TEST_INC) -E -MM $(filter %.c, $^) > $@.tmp ; \
+	sed 's,\(.*\)\.o[ :]*,objs/\1.o $@: ,g' < $@.tmp > $@ ; \
+	$(RM) $(RMFLAGS) $@.tmp
+$(DIR_OBJS)/%.dep: $(DIR_TEST)/%.c
+	@echo "Making $@ ..."
+	@set -e ; \
+	$(RM) $(RMFLAGS) $@.tmp ; \
+	$(CC) $(INC_DIRS) $(DIR_TEST_INC) -E -MM $(filter %.c, $^) > $@.tmp ; \
+	sed 's,\(.*\)\.o[ :]*,objs/\1.o $@: ,g' < $@.tmp > $@ ; \
+	$(RM) $(RMFLAGS) $@.tmp
+clean:
+	$(RM) $(RMFLAGS) $(RMS)
+

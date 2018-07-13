@@ -1,0 +1,4 @@
+objs/main.o objs/main.dep: src/main.c \
+ D:/make_project/Makefile/mk_tmp_project/source/foo/inc/foo.h \
+ D:/make_project/Makefile/mk_tmp_project/source/bar/inc/bar.h \
+ D:/make_project/Makefile/mk_tmp_project/source/bar/inc/bar_sub.h

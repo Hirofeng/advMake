@@ -1,0 +1,3 @@
+objs/bar.o objs/bar.dep: src/bar.c \
+ D:/make_project/Makefile/mk_tmp_project/source/bar/inc/bar.h \
+ D:/make_project/Makefile/mk_tmp_project/source/bar/inc/bar_sub.h

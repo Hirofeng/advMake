@@ -1,0 +1,2 @@
+objs/foo.o objs/foo.dep: src/foo.c \
+ D:/make_project/Makefile/mk_tmp_project/source/foo/inc/foo.h
